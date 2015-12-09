@@ -18,6 +18,10 @@
 */
 
 #pragma once
+
+#if !defined(_OSFUNC_H)
+#define _OSFUNC_H
+
 const char* oscurrentprocessid();
 void oskillprocess(const char* pid);
 char* osgetcwd(char* dest, int32_t size);
@@ -28,3 +32,5 @@ int32_t oscountfiles(const char* path);
 bool osrmfile(const char* path);
 uint64_t osgettimems();
 void osgosleep(uint32_t ms);
+
+#endif

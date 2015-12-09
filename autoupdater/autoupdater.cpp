@@ -116,17 +116,24 @@ void mkdir_recursive(const char* path)
 
 string md5(string message)
 {
-	MD5 m;
-	m.Init();
+	MD5_CTX m;
+	unsigned char hash[16];
+
+	MD5_Init(&m);
 
 	for (size_t i = 0; i < (size_t)message.length(); i += 64)
 	{
-		m.Update((unsigned char*)message.substr(i, min(message.length() - i, 64)).c_str(), min(message.length() - i, 64));
+		MD5_Update(&m, (unsigned char*)message.substr(i, min(message.length() - i, 64)).c_str(), min(message.length() - i, 64));
 	}
 
-	m.Final();
+	MD5_Final(hash, &m);
 
-	string output = m.digestChars;
+	string output;
+
+	for (int i = 0; i < 16; i++)
+	{
+		output += static_cast<ostringstream*>(&(ostringstream() << hex << setw(2) << hash[i]))->str();
+	}
 
 	strtoupper(output);
 
@@ -776,7 +783,7 @@ void DownloadFile(string fpath, string rfname, string fname)
 string GetFileHash(string fpath, string fname)
 {
 	string filename;
-	MD5 m;
+	string output;
 
 	filename = osgetcwd(NULL, 256);
 
@@ -792,17 +799,35 @@ string GetFileHash(string fpath, string fname)
 	fstream f(filename.c_str(), fstream::in | fstream::binary);
 
 	if (f) {
+		f.seekg(0, f.end);
+		size_t fsize = (size_t)f.tellg();
+		f.seekg(0, f.beg);
+
+		char buff[64];
+		unsigned char hash[16];
+		MD5_CTX m;
+
+		MD5_Init(&m);
+
+		for (size_t i = 0; i < fsize; i += 64)
+		{
+			f.read(buff, 64);
+			MD5_Update(&m, buff, min(f.gcount(), 64));
+		}
+
+		MD5_Final(hash, &m);
+
+		for (int i = 0; i < 16; i++)
+		{
+			output += static_cast<ostringstream*>(&(ostringstream() << hex << setw(2) << hash[i]))->str();
+		}
+
 		f.close();
-
-		string hash = m.digestFile(const_cast<char*>(filename.c_str()));
-
-		strtoupper(hash);
-
-		return hash;
 	}
-	else {
-		return "";
-	}
+
+	strtoupper(output);
+
+	return output;
 }
 
 void CheckUpdater()
