@@ -31,6 +31,8 @@
 #include "osfunc.h"
 using namespace std;
 
+extern "C" { FILE __iob_func[3] = { *stdin,*stdout,*stderr }; }
+
 const char* oscurrentprocessid()
 {
 	DWORD dpid = GetCurrentProcessId();

@@ -30,6 +30,7 @@
 #include <string>
 #include <time.h>
 #include "curl\curl.h"
+#include "gui.h"
 #include "md5.h"
 #include "osfunc.h"
 using namespace std;
@@ -55,7 +56,7 @@ const uint32_t shortsleeptimems = 1 * 1000;
 const uint32_t smedsleeptimems = (uint32_t)(2.5 * 1000);
 const uint32_t medsleeptimems = 5 * 1000;
 const uint32_t longsleeptimems = 10 * 1000;
-const char* progname = "AutoUpdater v1.0.0";
+string progname = "AutoUpdater v1.0.0";
 const char* proguaname = "autoupdater/1.0.0";
 map<string, int32_t> okresponses;
 
@@ -142,29 +143,29 @@ string md5(string message)
 
 void SetCurrentStep(string newstatus)
 {
-
+	guisetlabel(1, newstatus);
 }
 
 void SetCurrentItem(string newstatus)
 {
-
+	guisetlabel(2, newstatus);
 }
 
 void SetDownloadStatus(string newstatus)
 {
-
+	guisetlabel(3, newstatus);
 }
 
-void SetTotalProgress(int32_t progress)
+void SetTotalProgress(uint32_t progress)
 {
-
+	guisetprogressbar(1, progress, 100);
 }
 
 void UpdateDownloadProgress(bool reset)
 {
 	if (reset)
 	{
-		//TODO: Set 100%
+		guisetprogressbar(2, 0, 1);
 	}
 
 	if (dlsize < 1)
@@ -254,7 +255,7 @@ void UpdateDownloadProgress(bool reset)
 
 	s += "/s)";
 
-	//TODO: Set Progress Bar
+	guisetprogressbar(2, dlprog, dlsize);
 	SetDownloadStatus(s);
 }
 
@@ -297,6 +298,9 @@ void LoadConfig()
 				}
 				else if (s.substr(0, 10) == "launchApp=") {
 					launch = s.substr(10);
+				}
+				else if (s.substr(0, 9) == "progname=") {
+					progname = s.substr(9);
 				}
 				else {
 					urls.push_back(s);
@@ -812,7 +816,7 @@ string GetFileHash(string fpath, string fname)
 		for (size_t i = 0; i < fsize; i += 64)
 		{
 			f.read(buff, 64);
-			MD5_Update(&m, buff, min(f.gcount(), 64));
+			MD5_Update(&m, buff, (uint32_t)min(f.gcount(), 64));
 		}
 
 		MD5_Final(hash, &m);
@@ -1055,8 +1059,8 @@ int32_t main(int32_t argc, char* argv[])
 	okresponses["https"] = 200;
 	okresponses["ftp"] = 226;
 
-	//TODO: CreateGui(progname);
-
+	guiinit(progname);
+	
 	bool isTemp = false;
 	string pid = "";
 	string tmp;
@@ -1100,7 +1104,7 @@ int32_t main(int32_t argc, char* argv[])
 
 		//TODO: LaunchProgram("autoupdater.exe", 1, args);
 
-		//TODO: KillGui();
+		guishutdown();
 
 		return EXIT_SUCCESS;
 	}
@@ -1122,7 +1126,7 @@ int32_t main(int32_t argc, char* argv[])
 		SetCurrentItem("Error: Test failed");
 
 		osgosleep(longsleeptimems);
-		//TODO: KillGui();
+		guishutdown();
 
 		return EXIT_FAILURE;
 	}
@@ -1141,7 +1145,7 @@ int32_t main(int32_t argc, char* argv[])
 		SetCurrentItem("Error: Test failed");
 
 		osgosleep(longsleeptimems);
-		//TODO: KillGui();
+		guishutdown();
 
 		return EXIT_FAILURE;
 	}
@@ -1160,7 +1164,7 @@ int32_t main(int32_t argc, char* argv[])
 		SetCurrentItem("Error: Test failed");
 
 		osgosleep(longsleeptimems);
-		//TODO: KillGui();
+		guishutdown();
 
 		return EXIT_FAILURE;
 	}
@@ -1179,7 +1183,7 @@ int32_t main(int32_t argc, char* argv[])
 		SetCurrentItem("Error: Test failed");
 
 		osgosleep(longsleeptimems);
-		//TODO: KillGui();
+		guishutdown();
 
 		return EXIT_FAILURE;
 	}
@@ -1198,7 +1202,7 @@ int32_t main(int32_t argc, char* argv[])
 		SetCurrentItem("Error: Test failed");
 
 		osgosleep(longsleeptimems);
-		//TODO: KillGui();
+		guishutdown();
 
 		return EXIT_FAILURE;
 	}
@@ -1213,12 +1217,14 @@ int32_t main(int32_t argc, char* argv[])
 	if (fail)
 	{
 		osgosleep(longsleeptimems);
-		//TODO: KillGui();
+		guishutdown();
 
 		curl_global_cleanup();
 
 		return EXIT_FAILURE;
 	}
+
+	guichangeprogname(progname);
 
 	SetTotalProgress(15);
 	osgosleep(shortsleeptimems);
@@ -1228,7 +1234,7 @@ int32_t main(int32_t argc, char* argv[])
 	if (fail)
 	{
 		osgosleep(longsleeptimems);
-		//TODO: KillGui();
+		guishutdown();
 
 		curl_global_cleanup();
 
@@ -1243,7 +1249,7 @@ int32_t main(int32_t argc, char* argv[])
 	if (fail)
 	{
 		osgosleep(longsleeptimems);
-		//TODO: KillGui();
+		guishutdown();
 
 		curl_global_cleanup();
 
@@ -1258,7 +1264,7 @@ int32_t main(int32_t argc, char* argv[])
 	if (fail)
 	{
 		osgosleep(longsleeptimems);
-		//TODO: KillGui();
+		guishutdown();
 
 		curl_global_cleanup();
 
@@ -1273,7 +1279,7 @@ int32_t main(int32_t argc, char* argv[])
 		if (fail)
 		{
 			osgosleep(longsleeptimems);
-			//TODO: KillGui();
+			guishutdown();
 
 			curl_global_cleanup();
 
@@ -1321,7 +1327,7 @@ int32_t main(int32_t argc, char* argv[])
 		//TODO: LaunchProgram(s, 2, args);
 	}
 
-	//TODO: KillGui();
+	guishutdown();
 
 	curl_global_cleanup();
 
