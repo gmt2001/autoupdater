@@ -27,6 +27,7 @@ using namespace std;
 int32_t ystep = 10;
 int32_t maxsize = 10;
 int32_t mod = 0;
+bool scrinit = false;
 
 int32_t getxcenter(string s)
 {
@@ -36,16 +37,19 @@ int32_t getxcenter(string s)
 
 void guiinit(string progname)
 {
-	initscr();
-	noecho();
-	curs_set(0);
-
-	if (has_colors() == TRUE)
+	if (!scrinit)
 	{
-		start_color();
+		initscr();
+		noecho();
+		curs_set(0);
 
-		init_pair(1, COLOR_WHITE, COLOR_WHITE);
-		init_pair(2, COLOR_CYAN, COLOR_CYAN);
+		if (has_colors() == TRUE)
+		{
+			start_color();
+
+			init_pair(1, COLOR_WHITE, COLOR_WHITE);
+			init_pair(2, COLOR_CYAN, COLOR_CYAN);
+		}
 	}
 
 	int32_t maxy = getmaxy(stdscr);
@@ -81,20 +85,38 @@ void guiinit(string progname)
 	mvaddstr((ystep * 2) + 3 + mod, getxcenter(ver), ver.c_str());
 	mvaddstr((ystep * 2) + 4 + mod, getxcenter(hor), hor.c_str());
 	refresh();
+
+	scrinit = true;
 }
 
 void guichangeprogname(string progname)
 {
+	if (!scrinit)
+	{
+		return;
+	}
+
 	guisetlabel(0, progname);
 }
 
 void guishutdown()
 {
+	if (!scrinit)
+	{
+		return;
+	}
+
+	scrinit = false;
 	endwin();
 }
 
 void guisetlabel(int32_t index, string text)
 {
+	if (!scrinit)
+	{
+		return;
+	}
+
 	int32_t y;
 
 	switch (index)
@@ -160,6 +182,11 @@ void guisetlabel(int32_t index, string text)
 
 void guisetprogressbar(int32_t index, uint32_t value, uint32_t max)
 {
+	if (!scrinit)
+	{
+		return;
+	}
+
 	int32_t y;
 
 	if (max == 0) {

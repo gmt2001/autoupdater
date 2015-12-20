@@ -29,17 +29,18 @@
 #include <string>
 #include <sys/time.h>
 #include <time.h>
+#include <unistd.h>
 #include "osfunc.h"
 using namespace std;
 
-const char* oscurrentprocessid()
+string oscurrentprocessid()
 {
 	pid_t dpid = getpid();
 
 	char str[100];
 	sprintf(str, "%d", (int32_t)dpid);
 
-	const char* ret = str;
+	string ret = str;
 
 	return ret;
 }
@@ -139,4 +140,23 @@ void osgosleep(uint32_t ms)
 	ts.tv_sec = 0;
 	ts.tv_nsec = ms * 1000000L;
 	nanosleep(&ts, (struct timespec *)NULL);
+}
+
+void oslaunchprogram(char** argv)
+{
+	pid_t pid;
+
+	if ((pid = fork()) < 0)
+	{
+		printf("*** ERROR: forking child process failed\n");
+		exit(EXIT_FAILURE);
+	}
+	else if (pid == 0)
+	{
+		if (execvp(*argv, argv) < 0)
+		{
+			printf("*** ERROR: exec failed\n");
+			exit(EXIT_FAILURE);
+		}
+	}
 }

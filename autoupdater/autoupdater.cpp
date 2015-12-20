@@ -260,7 +260,6 @@ void UpdateDownloadProgress(bool reset)
 }
 
 // Current config file format is a simple list of urls, one per line with no section headers. C style comments are allowed (but not on the same line as a value)
-// The only exception to this is the value lines for randomUrl and launchApp
 void LoadConfig()
 {
 	SetCurrentStep("Opening config file...");
@@ -1058,16 +1057,21 @@ int32_t main(int32_t argc, char* argv[])
 	okresponses["http"] = 200;
 	okresponses["https"] = 200;
 	okresponses["ftp"] = 226;
-
-	guiinit(progname);
 	
 	bool isTemp = false;
 	string pid = "";
 	string tmp;
+	bool showGui = true;
 
 	for (int i = 0; i < argc; i++)
 	{
 		tmp = argv[i];
+
+		//Disables the gui
+		if (tmp == "-nogui")
+		{
+			showGui = false;
+		}
 
 		//Denotes that the current process is a temporary copy used for automatic updating of the autoupdater
 		if (tmp == "-temp")
@@ -1080,6 +1084,11 @@ int32_t main(int32_t argc, char* argv[])
 		{
 			pid = tmp.substr(3);
 		}
+	}
+
+	if (showGui)
+	{
+		guiinit(progname);
 	}
 
 	if (pid.length() > 3)
@@ -1099,12 +1108,16 @@ int32_t main(int32_t argc, char* argv[])
 
 		pid = "-p=" + pid;
 
-		char **args = new char*[1];
-		args[0] = const_cast<char*>(pid.c_str());
+		s = osgetcwd(NULL, 256);
+		s += "/autoupdater.exe";
 
-		//TODO: LaunchProgram("autoupdater.exe", 1, args);
+		char **args = new char*[2];
+		args[0] = const_cast<char*>(s.c_str());
+		args[1] = const_cast<char*>(pid.c_str());
 
 		guishutdown();
+
+		oslaunchprogram(args);
 
 		return EXIT_SUCCESS;
 	}
@@ -1287,6 +1300,8 @@ int32_t main(int32_t argc, char* argv[])
 		}
 	}
 
+	curl_global_cleanup();
+
 	if (!updaterchange)
 	{
 		SetTotalProgress(30);
@@ -1294,7 +1309,15 @@ int32_t main(int32_t argc, char* argv[])
 		CheckFiles();
 
 		SetCurrentStep("Update complete...");
-		SetCurrentItem("Launching the program...");
+
+		if (launch.length() > 0)
+		{
+			SetCurrentItem("Launching the program...");
+		}
+		else
+		{
+			SetCurrentItem("Autoupdater is now exiting...");
+		}
 
 		SetTotalProgress(100);
 		osgosleep(smedsleeptimems);
@@ -1304,9 +1327,18 @@ int32_t main(int32_t argc, char* argv[])
 		s += "/";
 		s += launch;
 
-		//TODO: LaunchProgram(s, 0, NULL);
+		char **args = new char*[1];
+		args[0] = const_cast<char*>(s.c_str());
+
+		guishutdown();
+
+		if (launch.length() > 0)
+		{
+			oslaunchprogram(args);
+		}
 	}
-	else {
+	else
+	{
 		SetCurrentStep("AutoUpdater has been updated...");
 		SetCurrentItem("Launching program to update the autoupdater...");
 
@@ -1316,20 +1348,19 @@ int32_t main(int32_t argc, char* argv[])
 
 		FileCopy("", "autoupdater-new.exe", "", "autoupdater-tmp.exe");
 
-		char **args = new char*[2];
-		args[0] = "-temp";
-		args[1] = const_cast<char*>(pid.c_str());
-
 		string s;
 		s = osgetcwd(NULL, 256);
 		s += "/autoupdater-tmp.exe";
 
-		//TODO: LaunchProgram(s, 2, args);
+		char **args = new char*[3];
+		args[0] = const_cast<char*>(s.c_str());
+		args[1] = "-temp";
+		args[2] = const_cast<char*>(pid.c_str());
+
+		guishutdown();
+
+		oslaunchprogram(args);
 	}
-
-	guishutdown();
-
-	curl_global_cleanup();
 
     return EXIT_SUCCESS;
 }
